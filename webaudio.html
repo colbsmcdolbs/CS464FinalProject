@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Audio Analysis Test</title>
+</head>
+<body>
+  <audio id="mysong" src="CitySunshine.mp3"></audio>
+</body>
+<script>  
+  var audio;
+  var playing;
+  var analyser;
+  var ctx;
+  var audioSrc;
+  var frequencyData;
+  var isSetup = false;
+  
+
+  document.onclick = function() {
+    if(!isSetup) {
+      ctx = new AudioContext();
+      audio = document.getElementById('mysong');
+      audioSrc = ctx.createMediaElementSource(audio);
+      analyser = ctx.createAnalyser();
+      analyser.smoothingTimeConstant = 0;
+      analyser.fftSize = 128;
+      audioSrc.connect(analyser);
+      audioSrc.connect(ctx.destination);
+      var bufferLength = analyser.frequencyBinCount;
+      frequencyData = new Uint8Array(bufferLength);
+      playing = false;
+      isSetup = true;
+
+    }
+    
+    if(!playing) {
+      audio.play();
+      analyser.getByteFrequencyData(frequencyData)
+      console.log(frequencyData);
+      playing = true;
+    }
+    else {
+      audio.pause();
+      analyser.getByteFrequencyData(frequencyData)
+      console.log(frequencyData);
+      playing = false;
+    }
+  }
+
+</script>
+</html>

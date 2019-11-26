@@ -6,6 +6,7 @@
 	<meta name="generator" content="BBEdit 10.5" />
 
 <!-- load matrix manipulation helper methods -->	
+<link rel="stylesheet" href="mycss.css">
 <script type="text/javascript" src="glMatrix_util.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
@@ -67,6 +68,13 @@
 <script>
 
 var gl;
+var audio;
+var playing;
+var analyser;
+var ctx;
+var audioSrc;
+var frequencyData;
+var isSetup = false;
 
 function initWebGLContext(aname) {
   gl = null;
@@ -82,6 +90,8 @@ function initWebGLContext(aname) {
     alert("Unable to initialize WebGL. Your browser may not support it.");
     gl = null;
   }
+  canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
   gl.viewportWidth = canvas.width;
   gl.viewportHeight = canvas.height;
   return gl;
@@ -318,6 +328,32 @@ function handleLoadedTexture(texture)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.bindTexture(gl.TEXTURE_2D, texture);
+}
+
+document.onclick = function() {
+    if(!isSetup) {
+      ctx = new AudioContext();
+      audio = document.getElementById('mysong');
+      audioSrc = ctx.createMediaElementSource(audio);
+      analyser = ctx.createAnalyser();
+      analyser.smoothingTimeConstant = 0;
+      analyser.fftSize = 128;
+      audioSrc.connect(analyser);
+      audioSrc.connect(ctx.destination);
+      var bufferLength = analyser.frequencyBinCount;
+      frequencyData = new Uint8Array(bufferLength);
+      playing = false;
+      isSetup = true;
+    }
+    
+    if(!playing) {
+      audio.play();
+      playing = true;
+    }
+    else {
+      audio.pause();
+      playing = false;
+    }
   }
 
 //Initialize everything for starting up a simple webGL application
@@ -334,15 +370,6 @@ function startHelloWebGL()
    initGeometry();
    initTextures();
 
-   //These two functions access the left and right clicks of the mouse, which change 
-   //the zoomPerspective on the mat4.translate step.
-   document.getElementById("hellowebgl").onclick = function editZoom() {
-        zoomPerspective = parseFloat(zoomPerspective -  1);
-   }
-
-   document.getElementById("hellowebgl").oncontextmenu = function editZoom() {
-        zoomPerspective = parseFloat(zoomPerspective +  1);
-   }
    
    gl.clearColor(0.4,0.4,0.4,1.0);
    gl.enable(gl.DEPTH_TEST);
@@ -373,8 +400,8 @@ function startHelloWebGL()
 
         mat4.translate(mvMatrix, [0.0, 0.0, zoomPerspective]);
 
-        mat4.rotate(mvMatrix, xRot/180.0*3.1415, [1, 0, 0]);
-        mat4.rotate(mvMatrix, yRot/180.0*3.1415, [0, 1, 0]);
+        
+        mat4.rotate(mvMatrix, 90/180.0*3.1415, [1, 0, 0]);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -389,6 +416,13 @@ function startHelloWebGL()
         gl.bindTexture(gl.TEXTURE_2D, exTexture);
         gl.uniform1i(shaderProgram.samplerUniform, 0);
         gl.uniform1i(shaderProgram.useLightingUniform, true);
+
+        if(isSetup)
+        {
+            analyser.getByteFrequencyData(frequencyData);
+            //Frequency data will hold all of the input for the cube.
+            //FrequencyData holds 64 elements.
+        }
 
         gl.uniform3f(shaderProgram.ambientColorUniform, 0.2, 0.2, 0.2);
         let lightingDirection = [0.0, -1.0, 0.0];
@@ -431,13 +465,12 @@ function startHelloWebGL()
 <!-- the onload attribute specifies a javascript function to execute when the body tag is loaded into the browser -->
 
 <body onload="startHelloWebGL()">
-<h1>Hello WebGL Simple Example</h1>
+<audio id="mysong" src="CitySunshine.mp3"></audio>
 
 <!-- embed the HTML5 Canvas Drawing object on the page.-->
 <!-- Name the canvas 'hellowebgl' for the javascript code. -->
 <canvas id="hellowebgl" width=640 height=480>
 If you're seeing this your web browser doesn't support the &lt;canvas>&gt; element. Ouch!
 </canvas>
-<h2>To Zoom in, Right Click. To Zoom out, Left Click.</h2>
 </body>
 </html>
