@@ -401,7 +401,7 @@ function startHelloWebGL()
         mat4.translate(mvMatrix, [0.0, 0.0, zoomPerspective]);
 
         
-        mat4.rotate(mvMatrix, 90/180.0*3.1415, [1, 0, 0]);
+        mat4.rotate(mvMatrix, 45/180.0*3.1415, [1, 0, 0]);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
@@ -422,6 +422,13 @@ function startHelloWebGL()
             analyser.getByteFrequencyData(frequencyData);
             //Frequency data will hold all of the input for the cube.
             //FrequencyData holds 64 elements.
+            for(var i = 0; i < 64; i++) {
+                var scaledValue = parseFloat(frequencyData[i] / 255);
+                //TODO 
+                //Jared, I have this so it will iterate through all 64 values
+                //I also scaled the output to be in a 0-1 range so it should be 
+                //much easier to work with.
+            }
         }
 
         gl.uniform3f(shaderProgram.ambientColorUniform, 0.2, 0.2, 0.2);
@@ -466,6 +473,7 @@ function startHelloWebGL()
 
 <body onload="startHelloWebGL()">
 <audio id="mysong" src="CitySunshine.mp3"></audio>
+
 
 <!-- embed the HTML5 Canvas Drawing object on the page.-->
 <!-- Name the canvas 'hellowebgl' for the javascript code. -->
