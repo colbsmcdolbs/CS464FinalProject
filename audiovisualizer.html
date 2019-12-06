@@ -393,7 +393,39 @@ function startHelloWebGL()
    // Draw the Scene
    Frames();
    // If doing an animation need to add code to rotate our geometry
-   
+}
+
+
+//Interps from begin to end depending on frac (0.0-1.0)
+function lerp(begin, end, frac){
+    return (1.0-frac) * begin + frac * end;
+}
+
+//Scale the size of an array. Currently can only expand
+function interpArray(inputArr, scaleSize){
+    const prefix = "[interpArray]\t\t";
+    if(scaleSize <=0){
+        console.log(prefix+"scaleSize must be greater than 0");
+        return null;
+    }
+    if(inputArr.length > scaleSize){
+        console.log(prefix+"scaleSize is smaller than inputArr length");
+        return null;
+    }
+    const scaleFact = (inputArr.length-1)/(1.0*(scaleSize-1));
+    let outputArr = [];
+    for(i=0; i < scaleSize; ++i){
+        let fracIdx = scaleFact*i;
+        let beginIdx = Math.floor(fracIdx);
+        let endIdx = Math.min(Math.ceil(fracIdx), inputArr.length-1.0);
+        let frac = 0;
+        let dist = endIdx-beginIdx;
+        if(0 != dist){
+            frac = (fracIdx-beginIdx)/dist;
+        }
+        outputArr[i] = lerp(inputArr[beginIdx], inputArr[endIdx], frac);
+    }
+    return outputArr;
 }
 
 // This function draws a basic webGL scene
@@ -446,6 +478,7 @@ function startHelloWebGL()
                 //I also scaled the output to be in a 0-1 range so it should be 
                 //much easier to work with.
             }
+            let heightArray = interpArray(frequencyData, 100);
         }
 
         gl.uniform3f(shaderProgram.ambientColorUniform, 0.2, 0.2, 0.2);
