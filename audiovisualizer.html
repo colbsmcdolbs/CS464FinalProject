@@ -75,6 +75,7 @@ var ctx;
 var audioSrc;
 var frequencyData;
 var isSetup = false;
+var songChanged = false;
 
 function initWebGLContext(aname) {
   gl = null;
@@ -330,23 +331,39 @@ function handleLoadedTexture(texture)
     gl.bindTexture(gl.TEXTURE_2D, texture);
 }
 
-document.onclick = function() {
+function songChange() {
+    songChanged = true;
+}
+
+function PlayAudio() { 
     if(!isSetup) {
-      ctx = new AudioContext();
-      audio = document.getElementById('mysong');
-      audioSrc = ctx.createMediaElementSource(audio);
-      analyser = ctx.createAnalyser();
-      analyser.smoothingTimeConstant = 0;
-      analyser.fftSize = 128;
-      audioSrc.connect(analyser);
-      audioSrc.connect(ctx.destination);
-      var bufferLength = analyser.frequencyBinCount;
-      frequencyData = new Uint8Array(bufferLength);
-      playing = false;
-      isSetup = true;
+        ctx = new AudioContext();
+        audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        audioSrc = ctx.createMediaElementSource(audio);
+        analyser = ctx.createAnalyser();
+        analyser.smoothingTimeConstant = 0;
+        analyser.fftSize = 128;
+        audioSrc.connect(analyser);
+        audioSrc.connect(ctx.destination);
+        var bufferLength = analyser.frequencyBinCount;
+        frequencyData = new Uint8Array(bufferLength);
+        playing = false;
+        isSetup = true;
     }
-    
-    if(!playing) {
+
+    if(songChanged) {
+        audio.pause();
+        audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        audioSrc = ctx.createMediaElementSource(audio);
+        analyser = ctx.createAnalyser();
+        analyser.smoothingTimeConstant = 0;
+        analyser.fftSize = 128;
+        audioSrc.connect(analyser);
+        audioSrc.connect(ctx.destination);
+        audio.play();
+        songChanged = false;
+    }
+    else if(!playing) {
       audio.play();
       playing = true;
     }
@@ -472,13 +489,23 @@ function startHelloWebGL()
 <!-- the onload attribute specifies a javascript function to execute when the body tag is loaded into the browser -->
 
 <body onload="startHelloWebGL()">
-<audio id="mysong" src="CitySunshine.mp3"></audio>
-
+<audio id="mambo" src="mambonum5.mp3"></audio>
+<audio id="iceice" src="iceicebaby.mp3"></audio>
+<audio id="starship" src="webuiltthiscity.mp3"></audio>
 
 <!-- embed the HTML5 Canvas Drawing object on the page.-->
 <!-- Name the canvas 'hellowebgl' for the javascript code. -->
-<canvas id="hellowebgl" width=640 height=480>
+<canvas id="hellowebgl" width=640 height=480 onload="setupAudio()">
 If you're seeing this your web browser doesn't support the &lt;canvas>&gt; element. Ouch!
 </canvas>
+<footer>
+    <h2>Control Dashboard</h2>
+    <h4>Choose Your Song:</h4>
+    <input type="radio" name="audio" value="mambo" checked="checked" onclick="songChange()">Mambo No. 5<br>
+    <input type="radio" name="audio" value="iceice" onclick="songChange()">Under Pressure<br>
+    <input type="radio" name="audio" value="starship" onclick="songChange()">We Built This City<br><br>
+    <input type="button" id="playpause" value="Play/Pause" onclick="PlayAudio()"><br><br><br><br>
+</footer>
 </body>
 </html>
+<script>
