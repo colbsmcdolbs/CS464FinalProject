@@ -29,6 +29,7 @@
     attribute vec3 aVertexPosition;
     attribute vec3 aVertexNormal;
     attribute vec2 aTextureCoord;
+    attribute float aVertexHeight;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
@@ -48,13 +49,13 @@
 
     void main(void) {
         nVertexPosition[0] = aVertexPosition[0];
-        nVertexPosition[1] = 0.0; //This value doesn't matter as it will be overwritten
+        nVertexPosition[1] = aVertexHeight;
         nVertexPosition[2] = aVertexPosition[2];
 
         vTextureCoord = aTextureCoord;
         clrVec = texture2D(uSampler, vTextureCoord);
         nclrVec = normalize(clrVec);
-        nVertexPosition[1] = sqrt(nclrVec[0]*nclrVec[0] + nclrVec[1]*nclrVec[1] + nclrVec[2]*nclrVec[2]);
+        //nVertexPosition[1] = sqrt(nclrVec[0]*nclrVec[0] + nclrVec[1]*nclrVec[1] + nclrVec[2]*nclrVec[2]);
         gl_Position = uPMatrix * uMVMatrix * vec4(nVertexPosition, 1.0);
 
         // Lighting Code
@@ -182,6 +183,9 @@ function initGLScene()
         shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
         shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightingDirection");
         shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalColor");
+
+        shaderProgram.vertexHeightAttribute = gl.getAttribLocation(shaderProgram, "aVertexHeight");
+        gl.enableVertexAttribArray(shaderProgram.vertexHeightAttribute);
     }
 
 
@@ -219,7 +223,9 @@ var cubeVertexPositionBuffer;
 var cubeVertexTextureCoordBuffer;
 var cubeVertexIndexBuffer;
 var cubeNormalBuffer;
+var vertexHeightBuffer;
 
+const gridLength = 100;
 function initGeometry()
  {
         let vertices = [];
@@ -229,47 +235,38 @@ function initGeometry()
         
         // Generate all of the vertices.
         let vertexCount = 0;
-        for(let i = 0; i < 100; i++) {
-            for(let j = 0; j < 100; j++) {
-                vertices[vertexCount++] = parseFloat(((j / 99) * 2) - 1);
-                vertices[vertexCount++] = 0.0;
-                vertices[vertexCount++] = parseFloat(((i / 99) * 2) - 1);
-            }
-        }
-
-        // Generate all of the normals
         let normalCount = 0;
-        for(let i = 0; i < 100; i++) {
-            for(let j = 0; j < 100; j++) {
+        let textCount = 0;
+        for(let i = 0; i < gridLength; i++) {
+            for(let j = 0; j < gridLength; j++) {
+                vertices[vertexCount++] = (((j / (gridLength-1.0)) * 2.0) - 1);
+                vertices[vertexCount++] = 0.0;
+                vertices[vertexCount++] = (((i / (gridLength-1.0)) * 2.0) - 1);
+
                 normals[normalCount++] = 0.0;
                 normals[normalCount++] = 1.0;
                 normals[normalCount++] = 0.0;
-            }
-        }
 
-        //Generate the textureCoor
-        let textCount = 0;
-        for(let i = 0; i < 100; i++) {
-            for(let j = 0; j < 100; j++) {
-                textureCoords[textCount++] = parseFloat(j / 99);
-                textureCoords[textCount++] = parseFloat(i / 99);
+                textureCoords[textCount++] = j*1.0/(gridLength-1);
+                textureCoords[textCount++] = i*1.0/(gridLength-1);
             }
         }
+        console.log("V: " + vertexCount);
 
         //Generate the triangles for the scene
         // For the faces, only go to 99, as 100 will break the code.
         let triangleCount = 0;
-        for(let i = 0; i < 99; i++) {
-            for(let j = 0; j < 99; j++) {
+        for(let i = 0; i < gridLength-1; i++) {
+            for(let j = 0; j < gridLength-1; j++) {
                 //t1
-                triangles[triangleCount++] = j + i * 100;
-                triangles[triangleCount++] = j + 1 * 100;
-                triangles[triangleCount++] = j + 1 + (i +1) * 100;
+                triangles[triangleCount++] = j + i * gridLength;
+                triangles[triangleCount++] = j + 1 + i*gridLength;
+                triangles[triangleCount++] = j + 1 + (i +1) * gridLength;
 
                 //t2
-                triangles[triangleCount++] = j + i * 100;
-                triangles[triangleCount++] = j + 1 + (i+1) * 100;
-                triangles[triangleCount++] = j + (i+1) * 100;
+                triangles[triangleCount++] = j + i * gridLength;
+                triangles[triangleCount++] = j + 1 + (i+1) * gridLength;
+                triangles[triangleCount++] = j + (i+1) * gridLength;
             }
         }
 
@@ -277,19 +274,19 @@ function initGeometry()
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         cubeVertexPositionBuffer.itemSize = 3;
-        cubeVertexPositionBuffer.numItems = vertexCount;
+        cubeVertexPositionBuffer.numItems = gridLength*gridLength;;    //@@TODO vertexCount
 
         cubeNormalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeNormalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
         cubeNormalBuffer.itemSize = 3;
-        cubeNormalBuffer.numItems = normalCount;
+        cubeNormalBuffer.numItems = gridLength*gridLength;
     
         cubeVertexTextureCoordBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
         cubeVertexTextureCoordBuffer.itemSize = 2;
-        cubeVertexTextureCoordBuffer.numItems = textCount;
+        cubeVertexTextureCoordBuffer.numItems = gridLength*gridLength;
 
         cubeVertexIndexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
@@ -305,6 +302,16 @@ function initGeometry()
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(triangles), gl.STATIC_DRAW);
         cubeVertexIndexBuffer.itemSize = 1;
         cubeVertexIndexBuffer.numItems = triangleCount;
+
+     let emptyArr =[];
+     for(i=0; i<vertexCount; ++i){
+         emptyArr[i] = 0;
+     }
+     vertexHeightBuffer = gl.createBuffer();
+     gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(emptyArr), gl.STATIC_DRAW);
+     vertexHeightBuffer.itemSize = 3;
+     vertexHeightBuffer.numItems = vertexCount;
     }
 
 
@@ -461,6 +468,7 @@ function interpArray(inputArr, scaleSize){
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
         gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
+
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, exTexture);
         gl.uniform1i(shaderProgram.samplerUniform, 0);
@@ -469,17 +477,18 @@ function interpArray(inputArr, scaleSize){
         if(isSetup)
         {
             analyser.getByteFrequencyData(frequencyData);
-            //Frequency data will hold all of the input for the cube.
-            //FrequencyData holds 64 elements.
-            for(var i = 0; i < 64; i++) {
-                var scaledValue = parseFloat(frequencyData[i] / 255);
-                //TODO 
-                //Jared, I have this so it will iterate through all 64 values
-                //I also scaled the output to be in a 0-1 range so it should be 
-                //much easier to work with.
+            let heightArray = interpArray(frequencyData, vertexHeightBuffer.numItems);
+            for(var i = 0; i < heightArray.length; i++) {
+                heightArray[i]/=255.0;
             }
-            let heightArray = interpArray(frequencyData, 100);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(heightArray), gl.STATIC_DRAW);
+            console.log("Random val: " + heightArray[500]);
         }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexHeightAttribute, vertexHeightBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.uniform3f(shaderProgram.ambientColorUniform, 0.2, 0.2, 0.2);
         let lightingDirection = [0.0, -1.0, 0.0];
