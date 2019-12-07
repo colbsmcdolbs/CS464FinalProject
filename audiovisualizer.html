@@ -225,7 +225,7 @@ var cubeVertexIndexBuffer;
 var cubeNormalBuffer;
 var vertexHeightBuffer;
 
-const gridLength = 100;
+const gridLength = 250;
 function initGeometry()
  {
         let vertices = [];
@@ -303,13 +303,12 @@ function initGeometry()
         cubeVertexIndexBuffer.itemSize = 1;
         cubeVertexIndexBuffer.numItems = triangleCount;
 
-     let emptyArr =[];
      for(i=0; i<vertexCount; ++i){
-         emptyArr[i] = 0;
+         currentHeightArray[i]=0.0;
      }
      vertexHeightBuffer = gl.createBuffer();
      gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
-     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(emptyArr), gl.STATIC_DRAW);
+     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currentHeightArray), gl.STATIC_DRAW);
      vertexHeightBuffer.itemSize = 3;
      vertexHeightBuffer.numItems = vertexCount;
     }
@@ -346,6 +345,7 @@ function PlayAudio() {
     if(!isSetup) {
         ctx = new AudioContext();
         audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        console.log(audio);
         audioSrc = ctx.createMediaElementSource(audio);
         analyser = ctx.createAnalyser();
         analyser.smoothingTimeConstant = 0;
@@ -435,6 +435,16 @@ function interpArray(inputArr, scaleSize){
     return outputArr;
 }
 
+//TODO used to implement filters that modify the raw, uninterped frequency data
+function lowResFilterPass(modArray){
+
+}
+
+//TODO used to implement filters that modify the interped freq data
+function highResFilterPass(modArray){
+
+}
+
 // This function draws a basic webGL scene
 // first it clears the framebuffer.
 // then we define our View positions for our camera using WebGL matrices.
@@ -444,8 +454,10 @@ function interpArray(inputArr, scaleSize){
     var yRot = 0;
     var zRot = 0;
     var zoomPerspective = -5.0;
+    var currentHeightArray = [];
 
-
+    var prevWeight = 0.7;
+    var prevSub = 0.1;
     function drawScene() {
         gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -477,14 +489,20 @@ function interpArray(inputArr, scaleSize){
         if(isSetup)
         {
             analyser.getByteFrequencyData(frequencyData);
-            let heightArray = interpArray(frequencyData, vertexHeightBuffer.numItems);
-            for(var i = 0; i < heightArray.length; i++) {
-                heightArray[i]/=255.0;
+            let lowRes = frequencyData;
+            lowResFilterPass(lowRes);
+
+            let highRes = interpArray(lowRes, vertexHeightBuffer.numItems);
+            highResFilterPass(highRes);
+            for(i = 0; i < highRes.length; i++) {
+                let val = highRes[i];
+                val/=255.0;
+                currentHeightArray[i] = (val*(1.0-prevWeight)) + (currentHeightArray[i]-prevSub)*prevWeight;
+                currentHeightArray[i] = Math.max(0.0, Math.min(1.0, currentHeightArray[i]));
             }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(heightArray), gl.STATIC_DRAW);
-            console.log("Random val: " + heightArray[500]);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(currentHeightArray), gl.STATIC_DRAW);
         }
 
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexHeightBuffer);
