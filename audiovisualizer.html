@@ -470,6 +470,7 @@ function highResFilterPass(modArray){
 
         
         mat4.rotate(mvMatrix, 45/180.0*3.1415, [1, 0, 0]);
+        mat4.rotate(mvMatrix, 90/180.0*3.1415, [0, 1, 0]);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
