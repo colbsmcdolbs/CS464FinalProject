@@ -89,6 +89,7 @@ var audioSrc;
 var frequencyData;
 var isSetup = false;
 var songChanged = false;
+var qualityChanged = false;
 
 function initWebGLContext(aname) {
   gl = null;
@@ -353,10 +354,19 @@ function songChange() {
     songChanged = true;
 }
 
+function qualityChange() {
+    qualityChanged = true;
+}
+
 function PlayAudio() { 
     if(!isSetup) {
         ctx = new AudioContext();
-        audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        if(document.getElementById("Audio-Quality").value == 1) {
+            audio = document.getElementById("32".concat(document.querySelector('input[name="audio"]:checked').value));
+        }
+        else {
+            audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        }
         console.log(audio);
         audioSrc = ctx.createMediaElementSource(audio);
         analyser = ctx.createAnalyser();
@@ -370,9 +380,16 @@ function PlayAudio() {
         isSetup = true;
     }
 
-    if(songChanged) {
+    if(songChanged || qualityChanged) {
         audio.pause();
-        audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        audioSrc.disconnect();
+        if(document.getElementById("Audio-Quality").value == 1) {
+            audio = document.getElementById("32".concat(document.querySelector('input[name="audio"]:checked').value));
+        }
+        else {
+            audio = document.getElementById(document.querySelector('input[name="audio"]:checked').value);
+        }
+        console.log(audio);
         audioSrc = ctx.createMediaElementSource(audio);
         analyser = ctx.createAnalyser();
         analyser.smoothingTimeConstant = 0;
@@ -380,6 +397,7 @@ function PlayAudio() {
         audioSrc.connect(analyser);
         audioSrc.connect(ctx.destination);
         songChanged = false;
+        qualityChanged = false;
     }
     else if(!playing) {
       audio.play();
@@ -561,9 +579,13 @@ function highResFilterPass(modArray){
 <!-- the onload attribute specifies a javascript function to execute when the body tag is loaded into the browser -->
 
 <body onload="startHelloWebGL()">
-<audio id="mambo" src="mambonum532.mp3"></audio>
-<audio id="iceice" src="iceicebaby32.mp3"></audio>
-<audio id="starship" src="webuiltthiscity32.mp3"></audio>
+<audio id="mambo" src="mambonum5.mp3"></audio>
+<audio id="iceice" src="iceicebaby.mp3"></audio>
+<audio id="starship" src="webuiltthiscity.mp3"></audio>
+
+<audio id="32mambo" src="32mambonum5.mp3"></audio>
+<audio id="32iceice" src="32iceicebaby.mp3"></audio>
+<audio id="32starship" src="32webuiltthiscity.mp3"></audio>
 
 <!-- embed the HTML5 Canvas Drawing object on the page.-->
 <!-- Name the canvas 'hellowebgl' for the javascript code. -->
@@ -576,6 +598,10 @@ If you're seeing this your web browser doesn't support the &lt;canvas>&gt; eleme
     <input type="radio" name="audio" value="mambo" checked="checked" onclick="songChange()">Mambo No. 5<br>
     <input type="radio" name="audio" value="iceice" onclick="songChange()">Under Pressure<br>
     <input type="radio" name="audio" value="starship" onclick="songChange()">We Built This City<br><br>
+    <select name="Audio-Quality" id="Audio-Quality" onclick="qualityChange()">
+        <option value="0">HiFi Audio</option>
+        <option value="1">LoFi Audio</option>
+    </select>
     <input type="button" id="playpause" value="Play/Pause" onclick="PlayAudio()"><br><br><br><br>
 </footer>
 </body>
