@@ -367,7 +367,6 @@ function PlayAudio() {
         analyser.fftSize = 128;
         audioSrc.connect(analyser);
         audioSrc.connect(ctx.destination);
-        audio.play();
         songChanged = false;
     }
     else if(!playing) {
