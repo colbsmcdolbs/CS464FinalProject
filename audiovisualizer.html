@@ -398,6 +398,7 @@ function PlayAudio() {
         audioSrc.connect(ctx.destination);
         songChanged = false;
         qualityChanged = false;
+        audio.play();
     }
     else if(!playing) {
       audio.play();
