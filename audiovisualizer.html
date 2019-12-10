@@ -16,11 +16,19 @@
 
     varying vec2 vTextureCoord;
     varying vec3 vLightWeighting;
+    varying float vHeightFrac;
 
     uniform sampler2D uSampler;
 
+    float lerp(float begin, float end, float frac){
+        return (1.0-frac) * begin + frac * end;
+    }
+
     void main(void) {
         vec4 tx_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+        tx_FragColor[0] = lerp(0.0, 1.0, vHeightFrac);
+        tx_FragColor[1] = lerp(0.0, 0.75, 1.0-vHeightFrac);
+        tx_FragColor[2] = 0.0;
         gl_FragColor = vec4(tx_FragColor.rgb * vLightWeighting, tx_FragColor.a);
     }
 </script>
@@ -40,6 +48,8 @@
     varying vec4 clrVec;
     varying vec4 nclrVec;
 
+    varying float vHeightFrac;
+
     uniform mat3 uNMatrix;
     uniform vec3 uAmbientColor;
     uniform vec3 uLightingDirection; 
@@ -51,6 +61,8 @@
         nVertexPosition[0] = aVertexPosition[0];
         nVertexPosition[1] = aVertexHeight;
         nVertexPosition[2] = aVertexPosition[2];
+
+        vHeightFrac = aVertexHeight;
 
         vTextureCoord = aTextureCoord;
         clrVec = texture2D(uSampler, vTextureCoord);
@@ -225,7 +237,7 @@ var cubeVertexIndexBuffer;
 var cubeNormalBuffer;
 var vertexHeightBuffer;
 
-const gridLength = 250;
+const gridLength = 8;
 function initGeometry()
  {
         let vertices = [];
